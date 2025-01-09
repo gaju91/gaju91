@@ -13,7 +13,7 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
-# Build the Next.js app and export static files
+# Build the Vite app for production
 RUN npm run build
 
 
@@ -24,7 +24,7 @@ FROM node:lts-alpine
 WORKDIR /app
 
 # Copy the exported static files from the build stage
-COPY --from=builder /app/out /app
+COPY --from=builder /app/dist /app
 
 # Install the `serve` package globally
 RUN npm install -g serve
@@ -34,4 +34,4 @@ ENV PORT=8080
 EXPOSE ${PORT}
 
 # Command to serve the static files
-CMD ["sh", "-c", "serve -s -l ${PORT} /app"]🐳
+CMD ["sh", "-c", "serve -s -l ${PORT} /app"]

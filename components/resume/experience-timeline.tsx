@@ -13,7 +13,7 @@ interface Experience {
 
 const experiences: Experience[] = [
   {
-    company: "Invent",
+    company: "Launchpad Apps (AU)",
     role: "Senior Backend Engineer",
     period: "2022 - Present",
     achievements: [

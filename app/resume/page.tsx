@@ -10,7 +10,7 @@ export default function ResumePage() {
       <div className="flex justify-between items-center mb-12">
         <h1 className="text-4xl font-bold">Resume</h1>
         <a 
-          href="/resume.pdf" 
+          href="/Gajanand_Sharma_CV_IN-1.pdf" 
           download 
           className="inline-flex items-center px-4 py-2 border border-indigo-500 text-sm font-medium rounded-md text-indigo-700 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
