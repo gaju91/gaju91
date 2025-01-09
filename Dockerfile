@@ -24,7 +24,7 @@ FROM node:lts-alpine
 WORKDIR /app
 
 # Copy the exported static files from the build stage
-COPY --from=builder /app/dist /app
+COPY --from=builder /app/out /app
 
 # Install the `serve` package globally
 RUN npm install -g serve
