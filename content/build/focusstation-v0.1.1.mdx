@@ -1,0 +1,82 @@
+---
+title: "FocusStation v0.1.1 — Shipping Reveals Everything You Missed"
+date: "2026-07-16"
+product: "focusstation"
+status: "shipped"
+---
+
+[Release notes →](https://github.com/gaju91/focusStation/releases/tag/v0.1.1)
+
+> **Historical note:** this post records the reliability pass after v0.1.0. The completed app later changed sleep handling again: timers now continue accurately through screen sleep and lid-close, while the local midnight boundary still ends the day's session. It also gained daily workspaces, carry/repeat, history export, and a rebuilt UI architecture. [Read the v1.0.0 closing build log →](/build/focusstation-v1.0.0)
+
+## v0.1.0 shipped. Then I actually used it.
+
+I was proud of v0.1.0. A menu bar timer built over a few weekends by someone who'd never written Swift. Nineteen files, zero dependencies, shipped.
+
+Then Monday came. I sat down to work and the timer froze. The popover stopped updating. The menu bar went blank. Tasks kept reordering themselves whenever I started one. Editing a running task was impossible — clicking the text field did nothing. Closing my laptop mid-timer made the clock stop.
+
+Every single bug was something I missed because I was testing in isolation. Start a timer, verify it runs, move on. I wasn't living with the app. Real usage exposes everything.
+
+v0.1.1 is five days of fixing what v0.1.0 got wrong. Same feature set. Everything actually works now.
+
+## What was broken
+
+### The sleep timer
+
+Close your laptop mid-timer. Open it three hours later. v0.1.0 showed the same elapsed time as when you closed it. Your 2-hour meeting still said 2 hours.
+
+The code was actively pausing timers on sleep. For v0.1.1, I treated that as a timer-engine bug and let `Date()` advance through sleep. Thirteen lines deleted. Zero lines added.
+
+Real use challenged that decision again. Pausing on sleep meant turning off the screen silently changed task state and forced a manual Resume click after wake. The completed app returns to the timestamp model: sleep does not mutate a running task, elapsed time catches up after wake, and the local midnight boundary still caps the session to its scheduled day.
+
+### The frozen popover
+
+Elapsed time in the dropdown only updated when you moved the mouse or clicked something. Not smoothly. Not every second.
+
+The app was destroying and recreating the entire popover every single second. Every timer tick nuked your edit state, your hover state, your scroll position. Fix: update the label only. Let the popover live. Six rewrites to get right.
+
+### The blank menu bar
+
+Start a task. Popover says it's running. Menu bar shows just a brain icon.
+
+The status item width wasn't updating when content changed. Fix: measure the content, set the width manually, clamp between 24-260px. Called on every tick and every state change.
+
+### Other things that broke
+
+- Editing a running task did nothing — background state sync was clobbering the edit form. Fixed by pausing sync during edits.
+- Starting a task jumped it to the top of the list — sort was by activity, not insertion order. Fixed by sorting on insertion order only. Drag-and-drop is now the only way to reorder.
+- No visual signal when you blow past your target — set 30 minutes, hit 2 hours, timer color never changed. Now elapsed time turns red when you're past target.
+
+## What I learned
+
+**"It works on my machine" is a lie.** Every bug was something I missed testing in short bursts. I wasn't sleeping my Mac mid-timer. I wasn't editing tasks while one was running. I wasn't letting the popover stay open for an hour. You have to live with the product to find the real problems.
+
+**Shipping is not the finish line.** v0.1.0 was the starting gun. Five days of bug fixes followed. That's the actual work — not the glamorous launch, but the quiet week of making things actually reliable.
+
+**The AI can build it, but you have to break it.** v0.1.0 was vibe-coded. v0.1.1 was debugged by a human using the actual app, filing concrete bugs, and verifying fixes. The AI wrote the fixes. I found the problems. That's the contract.
+
+## What came after the foundation
+
+The next iteration did not become a conventional productivity dashboard. The product became more opinionated:
+
+- every local calendar date is its own task workspace;
+- Today is interactive, future dates are for planning, and past dates are read-only history;
+- target capacity stops the plan from promising more time than the day contains;
+- timers stop at their scheduled midnight and respect DST boundaries;
+- unfinished work moves only through explicit Carry or Repeat actions;
+- completed work stays inline with a green check and strikethrough;
+- selected-day or full-history CSV export replaces a heavyweight statistics screen;
+- a stable 340 pt, content-sized popover and one shared view model replaced the fragile focus/layout cycle;
+- 66 tests now attack rapid saves, hostile names, huge lists, calendar transitions, sleep continuity, carry atomicity, and rendering stability.
+
+Notifications, cloud sync, global timer shortcuts, and trend dashboards never made the cut. Code signing remains future distribution work. v0.1.1 was the foundation; the final build is the product that foundation made possible.
+
+---
+
+*Still 19 Swift files. Still zero dependencies. Still built by someone who never shipped Swift before this month.*
+
+---
+
+*Previously: [The Problem FocusStation Solves →](/build/focusstation-vision) · [v0.1.0 First Release →](/build/focusstation-v0.1.0)*
+
+*Next: [FocusStation v1.0.0 — The Final Build →](/build/focusstation-v1.0.0)*

@@ -1,0 +1,68 @@
+---
+title: "The Problem FocusStation Solves"
+date: "2026-07-05"
+product: "focusstation"
+status: "in-progress"
+---
+
+[View on GitHub →](https://github.com/gaju91/focusStation)
+
+## The problem I kept running into
+
+I'd sit down at 9 AM with a mental list: refactor the auth module, write tests for the queue system, review that PR, sketch the new API design. By 6 PM, I'd have spent seven hours on the auth refactor and done nothing else. The entire day disappeared into one task. The rest of the list? Untouched.
+
+Not because I was lazy. Because I had nothing keeping me accountable to my own plan. No constraint saying "you said 2 hours on this — you're at 3." No signal that it was time to move on.
+
+I didn't need a time tracker. I needed something that would sit in my menu bar, show me what I committed to working on today, and gently remind me when I'd given a task enough time.
+
+So I decided to build it.
+
+## It's a prioritization tool disguised as a timer
+
+The core question FocusStation answers isn't "what have I been doing?" It's "what should I be doing right now?"
+
+Here's the flow:
+
+1. **Morning**: add the 3-5 things you want to get done today. Give each one a target time — how long are you *allowing* this task to take?
+2. **During the day**: your menu bar shows the active task. Glance up, see what you're on. See if you're within your target or running over.
+3. **When the target passes**: that's the signal. Either you're done (complete it and move to the next task) or you underestimated (adjust, but now you're making a deliberate choice, not drifting).
+4. **End of day**: look back and see what actually happened vs. what you planned. Every day becomes data — not for a timesheet, for you.
+
+The timer isn't measuring. It's gatekeeping. It's the voice that says "you allocated 2 hours to this and it's been 2.5 — time to wrap up or decide to extend."
+
+## The constraint
+
+Every productivity app I've tried has the same fatal flaw: friction. Open the app. Navigate. Search. Click. By the time you've done the dance, you've lost the mental state you were trying to protect.
+
+The design brief was one sentence: **if interacting with FocusStation takes more than one second, it has failed.**
+
+That single constraint drove everything:
+
+- **Menu bar only.** No dock icon. The app is ambient — glance up, you know what you're doing.
+- **No setup flow.** Add a task: name, optional target time, save. That's the entire creation UX.
+- **One click to switch tasks.** Starting a new task auto-pauses the current one. No confirmation. No "are you sure?"
+- **Target time is visual, not punishing.** Within your target, the timer shows green. Approaching the limit: orange. Past the limit: you know. No alarm — just a color that says "you said 2 hours."
+
+## How it stacks up
+
+|  | Toggl | Clockify | Timery | FocusStation |
+|---|---|---|---|---|
+| Lives in | Dock + browser | Dock + browser | Menu bar | Menu bar |
+| Time to start | 15-30 sec | 10-20 sec | 2-3 sec | < 1 sec |
+| Needs project setup | Yes | Yes | No | No |
+| Native | Electron | Web wrapper | SwiftUI | SwiftUI |
+| Who it's built for | Employers tracking teams | Managers tracking utilization | Freelancers billing clients | Someone trying to stay focused |
+
+Most tools treat time tracking as bookkeeping. FocusStation treats it as a mirror — something you glance at to know if you're still on track, not something you report to at the end of the day.
+
+## The bet
+
+Productivity tools are obsessed with capturing everything. Every task. Every project. Every minute. The assumption is that more data = more control.
+
+I think the opposite. Less data. Faster decisions. A tool that asks one question — "what are you doing right now, and is it what you planned to do?" — and gets out of the way.
+
+FocusStation isn't competing with task managers or time trackers. It's competing with "I'll just remember what I need to do." And that's a category nobody else is in.
+
+---
+
+*Next: [FocusStation v0.1.0 — First Release →](/build/focusstation-v0.1.0)*

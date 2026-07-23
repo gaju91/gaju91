@@ -1,0 +1,195 @@
+---
+title: "FocusStation v1.0.0 — The Final Build"
+date: "2026-07-23"
+product: "focusstation"
+status: "shipped"
+---
+
+[Download FocusStation →](/tools/focusstation) &emsp; [Release notes →](https://github.com/gaju91/focusStation/releases/tag/v1.0.0) &emsp; [Read the user guide →](/tools/focusstation/guide) &emsp; [View the source →](https://github.com/gaju91/focusStation)
+
+## I thought v0.1.1 was the foundation
+
+The previous build log ended with a confident sentence: *v0.1.1 is that foundation.*
+
+Then I kept using the app.
+
+The timer was reliable, but the product was still built around a list that happened to survive from one day to the next. Yesterday's unfinished task looked exactly like today's plan. A long target could run past midnight. History existed only as old rows in the same list. The interface had accumulated small interaction problems: long names cramped the controls, hover content moved the layout, the popover resized unpredictably, and editing an existing task could take several clicks before the field accepted focus.
+
+None of these were isolated polish bugs. They were telling me the app had the wrong shape.
+
+The final iteration turned FocusStation from a persistent timer list into a **day-specific focus workspace**—and rebuilt the UI architecture underneath it so the simple interactions are actually simple.
+
+On 23 July, that iteration shipped as **v1.0.0**: a tested Apple Silicon release with the final day-based workflow, a real macOS application icon, refreshed documentation, and a downloadable build.
+
+<figure className="my-8">
+  <video
+    controls
+    playsInline
+    preload="metadata"
+    poster="/focusstation/guide/plan.png"
+    className="w-full max-w-[680px] mx-auto rounded-xl border bg-muted"
+  >
+    <source src="/focusstation/guide/walkthrough.mp4" type="video/mp4" />
+    Your browser does not support embedded video.
+  </video>
+  <figcaption className="mt-3 text-center text-sm text-muted-foreground">
+    The completed workflow: plan, edit, reorder, focus, complete, review, export, and carry work forward.
+  </figcaption>
+</figure>
+
+## The feature that exposed the real problem
+
+This started with a tiny idea: show a red dot beside a task carried over from yesterday.
+
+Then came the obvious questions. Should the dot say Day 2? Should it have a tooltip? Should it disappear after acknowledgement? Should it return tomorrow? How do you make the tooltip instant? Where does the text go when the row is already crowded?
+
+We spent time trying to perfect the indicator before stepping back and asking the more useful question: **why is a task from yesterday pretending to be a task for today?**
+
+The red dot was not a feature. It was compensation for a missing time model.
+
+So I removed the need for it.
+
+## Every date is now a workspace
+
+The title in the popover became a compact date carousel. Each local calendar date owns its tasks, order, completion state, elapsed time, and daily summary.
+
+- **Today** is the execution surface. Create, edit, reorder, time, complete, delete, carry, and repeat.
+- **Future days** are planning surfaces. You can prepare and order work, but you cannot start timers or complete it early.
+- **Past days** are read-only history. What happened stays what happened.
+
+This also solved the midnight problem properly. A task scheduled for today cannot keep running invisibly into tomorrow. At the local day boundary, FocusStation caps its elapsed time at midnight, stops it, preserves it on the original date, and advances Today.
+
+The implementation uses calendar arithmetic rather than adding 86,400 seconds. That matters because a local day can be 23, 24, or 25 hours around daylight-saving transitions. Half-hour time zones, leap days, year boundaries, and clock changes are part of the model, not edge cases bolted on afterward.
+
+## Planning has a physical limit
+
+Once dates were real, targets could become honest.
+
+At noon, Today does not have 24 hours available. It has the time between now and local midnight. Existing unfinished targets reserve part of that capacity. FocusStation will not accept a new plan that promises more target time than the selected day can contain.
+
+Future days use their actual full local-day duration. Completed tasks stop consuming future planning capacity. Editing a task temporarily removes its old target from the calculation so you can change it without double-counting it.
+
+This is the product idea from the original vision finally implemented: target time is not bookkeeping. It is a boundary around what you are willing to spend.
+
+## Carry is a decision, not a reset
+
+Nothing automatically rolls over.
+
+Open a previous date and unfinished work is still there. If it matters tomorrow, you have two explicit choices:
+
+- **Carry** starts a new copy at zero elapsed time with only the remaining estimate.
+- **Repeat** starts fresh with the original full target.
+
+The old task never changes. A lineage identifier connects the copies and prevents the same source from being copied repeatedly. Carrying every unfinished task is atomic: FocusStation checks the destination's capacity first, then copies everything or nothing. No half-completed batch and no silent duplicates.
+
+That is much clearer than a warning dot. Yesterday is history. Tomorrow is a plan. Moving work between them requires intent.
+
+## History without building a dashboard
+
+I originally imagined daily and weekly statistics. The final product took a smaller path.
+
+The date carousel is already a history browser. Move backward and you see the exact ordered list, tracked time, targets, completion state, and daily total. Completed tasks remain inline with a green check and strikethrough instead of disappearing into a separate archive section.
+
+For analysis outside the app, the header now exports either the selected day or all history through the native macOS Save panel. The CSV includes date, task, status, tracked seconds and readable time, target seconds and readable time, and overtime.
+
+The exporter is deterministic, escapes commas, quotes, and line breaks, and neutralizes names beginning with spreadsheet-formula characters. History stays lightweight inside FocusStation and portable when you need more.
+
+## The UI had to be rebuilt, not patched again
+
+The hardest bug in this phase sounded trivial: click Edit, then type.
+
+Creating a new task focused correctly. Editing an existing one did not. The first click sometimes opened the editor without focusing the name. Repeated clicks queued more focus work and made the delay worse. Attempts to force layout triggered AppKit layout-recursion warnings. One modal workaround focused reliably but violated the entire inline interaction model.
+
+The fix was architectural:
+
+- one `MenuBarController` owns one native status item and one native popover;
+- one shared `DropdownViewModel` owns the selected day and editor session;
+- create and edit use the same inline editor state;
+- stale field callbacks are rejected after a save or cancel;
+- popover size changes are coalesced onto the next main run-loop cycle;
+- no code forces layout while AppKit is already laying out;
+- the popover is never recreated just to update time or state.
+
+The result is a stable 340 pt panel whose height follows its content between 188 and 480 pt. Large lists scroll without advertising a scrollbar. Opening an editor makes it visible. Save closes on the first click. Return saves, Escape cancels, and `⌘N` creates.
+
+Task rows now reserve fixed 28 pt columns for completion, hover actions, and play/pause. Long names get two lines before truncation. Hover reveals pencil and trash controls without moving anything. Right-click exposes the same secondary actions plus Carry and Repeat. The only persistent circular control is completion; play and pause use quieter filled symbols.
+
+The completed row stays exactly where the user put it.
+
+## The menu bar became boring—in the best way
+
+The status item now has one job and does it predictably.
+
+Idle is a brain icon. Running or paused shows the task icon, a safely truncated name, elapsed time, and the optional target. The time suffix is protected while the name gives up space first. The full task, state, and time live in the native tooltip.
+
+Elapsed time now follows one rule everywhere: green while it is within the target, orange when the task is paused, and red once it is overdue. Overdue wins even when the task is paused. The label is capped at 260 pt, and the popover arrow is recalculated from the actual visible button width so it stays centered whether the item is icon-only or expanded.
+
+Sleep handling follows the timer model instead of fighting it. Turning off the screen, letting the Mac sleep, or closing the lid no longer changes a running task into a paused one. Elapsed time is derived from the absolute start timestamp, so it catches up after wake without a manual Resume click. The calendar boundary remains deliberate: if sleep crosses local midnight, FocusStation records only up to midnight, stops the task, and preserves it on the original date.
+
+The launch path also moved fully into AppKit lifecycle ownership. FocusStation waits until the application has attached to the active screen before installing the status item. Repeated Xcode launches no longer randomly produce an invisible menu-bar app.
+
+The final release check caught a separate kind of invisibility: the Xcode target named `AppIcon`, but the project did not contain an app-icon asset catalog. The menu-bar brain was present, while Finder and Applications had no proper product icon. v1.0.0 now includes the complete native icon set without changing the menu-bar identity.
+
+## Then I tried to break everything
+
+The final pass was not “click each button once.” It was an adversarial campaign.
+
+The 66-test suite now covers:
+
+- one hundred Save attempts creating exactly one task;
+- stale create/edit field commits after the editor has closed;
+- rapid date navigation while editing;
+- reordering across completion states and dense repeated moves;
+- batch carry capacity, atomicity, and duplicate lineage prevention;
+- midnight cutoffs, DST changes, leap days, year transitions, and half-hour time zones;
+- four thousand adjacent calendar-day round trips;
+- negative, infinite, `NaN`, and extremely large time values;
+- ten thousand-row height calculations;
+- two hundred editor/date rendering transitions at a stable width;
+- five hundred hostile CSV rows, formula-like names, and selected-day isolation;
+- corrupt legacy running tasks and idempotent repeated pause calls.
+- sleep notifications preserving a running session while midnight reconciliation remains intact.
+
+I also restarted the app repeatedly from Xcode, hammered the editor, used long names, opened large lists, switched timers, completed and reopened work, carried batches, and walked the native export flow.
+
+The lesson from v0.1.1 still holds: the AI can build it, but the human has to break it. The difference now is that the ways I broke it became permanent tests.
+
+## Finishing the product meant finishing the explanation
+
+A local utility still needs a real product surface.
+
+The website now has:
+
+- an updated download page that reflects the current app;
+- screenshots for planning, focusing, and reviewing history;
+- a chronological user guide covering the complete workflow and edge cases;
+- a recorded walkthrough showing create, edit, reorder, timing, completion, deletion, history, export, carry, and future planning;
+- this three-part release story, connected from the original vision to the finished product.
+
+The app is local-only, but the explanation should not be hidden inside the codebase.
+
+## What “complete” means
+
+FocusStation v1.0.0 is shipped and complete for the problem it set out to solve.
+
+It is not getting teams, projects, cloud sync, billing, AI, custom themes, a plugin ecosystem, or a giant analytics dashboard. Those are not unfinished features. They are boundaries.
+
+The current ZIP is ad-hoc signed rather than Developer ID signed and notarized, and compatibility fixes will always exist. But the product loop is closed:
+
+1. Plan a realistic local day.
+2. See the current focus without leaving the menu bar.
+3. Track one task accurately.
+4. Complete work without destroying its context.
+5. Review what happened.
+6. Deliberately decide what moves forward.
+7. Export the history when you need it elsewhere.
+
+The original app was a timer I could glance at. The finished app is a small operating system for one day of focused work.
+
+And it still has zero third-party dependencies.
+
+---
+
+*Previously: [The Problem FocusStation Solves →](/build/focusstation-vision) · [v0.1.0 First Release →](/build/focusstation-v0.1.0) · [v0.1.1 Shipping Reveals Everything You Missed →](/build/focusstation-v0.1.1)*
+
+*Use it: [Download FocusStation →](/tools/focusstation) · [Read the v1.0.0 release notes →](https://github.com/gaju91/focusStation/releases/tag/v1.0.0) · [Read the complete guide →](/tools/focusstation/guide)*
